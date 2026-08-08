@@ -1,0 +1,6 @@
+// Добавляет поля для пагинации и сортировки:
+
+import { PaginationAndSorting } from "../../../core/types/pagination-and-sorting";
+import { PostSortField } from "./post-sort.field";
+
+export type PostQueryInput = PaginationAndSorting<PostSortField> 
