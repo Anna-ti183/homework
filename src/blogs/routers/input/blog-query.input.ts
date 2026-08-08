@@ -10,7 +10,7 @@ import { PaginationAndSorting } from "../../../core/types/pagination-and-sorting
 
 export type BlogQueryInput = PaginationAndSorting<BlogSortField> & 
 Partial<{ // Она делает все поля объекта опциональными (добавляет ? к каждому полю)
-    searchBlogNameTerm: string;
+    searchNameTerm: string;
 }>;
 
 /*

@@ -40,7 +40,7 @@ export function paginationAndSortingValidation<T extends string>(
                 `Sort direction must be one of: ${Object.values(SortDirection).join(', ')}`,
             ),
 
-        query('searchBlogNameTerm')
+        query('searchNameTerm')
             .optional() //.optional()	Если параметра нет — пропускаем
             .isString()
             .withMessage('searchBlogNameTerm must be a string')

@@ -20,7 +20,7 @@ export const blogsRepository = {
             pageSize,
             sortBy = 'createdAt',
             sortDirection = 'desc',
-            searchBlogNameTerm,
+            searchNameTerm,
         } = queryDto;
 
         // 📐 Сколько записей нужно пропустить для текущей страницы
@@ -30,9 +30,9 @@ export const blogsRepository = {
         const filter: any = {};
 
         // 1️⃣ ФИЛЬТР (ПОИСК ПО ИМЕНИ). Если передан поисковый термин — добавляем условие в фильтр
-        if (searchBlogNameTerm) {
+        if (searchNameTerm) {
             filter.name = {
-                $regex: searchBlogNameTerm,  // регулярное выражение для частичного совпадения
+                $regex: searchNameTerm,  // регулярное выражение для частичного совпадения
                 $options: 'i'      // 'i' — поиск без учёта регистра
             }
         };
