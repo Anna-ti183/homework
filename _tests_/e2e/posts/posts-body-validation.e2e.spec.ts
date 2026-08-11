@@ -145,13 +145,5 @@ describe('Post API body validation check', () => {
         ...createdPost,
     });
 });
-
-
-
-
-
-
-
-
     });
 
