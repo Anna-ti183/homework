@@ -1,8 +1,7 @@
 import { Request, Response } from "express";
 import { HttpStatus } from "../../../core/types/http-statuses";
-import { blogsService } from "../../application/blogs.service";
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
-import { mapToBlogOutput } from "../mappers/map-to-blog-output.util";
+import { blogsQueryRepository, mapToBlogOutput } from "../../repositories/blogs.query-repository";
 
 export async function getIdBlogHandler(
     req: Request<{ id: string }>,
@@ -11,7 +10,7 @@ export async function getIdBlogHandler(
     try {
         const id = req.params.id //Берёт ID из URL
 
-        const blog = await blogsService.findByIdOrFail(id); //Ищет блог в БД
+        const blog = await blogsQueryRepository.findByIdOrFail(id); //Ищет блог в БД
 
      
         const blogOutput = mapToBlogOutput(blog); //Преобразует в формат для ответа

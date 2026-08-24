@@ -3,7 +3,7 @@ import { HttpStatus } from "../../../core/types/http-statuses";
 
 import { postsService } from "../../application/posts.service";
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
-import { mapToPostOutput  } from "../mappers/map-to-post-post.util";
+import { mapToPostOutput, postsQueryRepository  } from "../../../posts/repositories/posts.query-repositories"
 import { PostAttributes } from "../../application/dtos/post-attributes";
 
 export async function createPostHandler(
@@ -15,7 +15,7 @@ export async function createPostHandler(
         const createdPostId = await postsService.create(req.body)
 
         // 2. Находим созданный блог по ID
-        const createdPost = await postsService.findByIdOrFail(createdPostId);
+        const createdPost = await postsQueryRepository.findByIdOrFail(createdPostId);
 
         // 3. Маппим в формат для ответа клиенту
         const postOutput = mapToPostOutput(createdPost);

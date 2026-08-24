@@ -10,9 +10,14 @@ const DEFAULT_SORT_DIRECTION = SortDirection.Desc;
 
 export function paginationAndSortingValidation<T extends string>(
     sortFieldsEnum: Record<string, T>,
+
+    
 ) {
     const allowedSortFields = Object.values(sortFieldsEnum);
-
+    
+    console.log('sortFieldsEnum:', sortFieldsEnum);
+    console.log('Object.values:', Object.values(sortFieldsEnum));
+    
     return [
         query('pageNumber')
             .default(DEFAULT_PAGE_NUMBER)
@@ -43,7 +48,20 @@ export function paginationAndSortingValidation<T extends string>(
         query('searchNameTerm')
             .optional() //.optional()	Если параметра нет — пропускаем
             .isString()
-            .withMessage('searchBlogNameTerm must be a string')
+            .withMessage('searchNameTerm must be a string')
             .trim(),
+
+        query('searchLoginTerm')
+            .optional()
+            .isString()
+            .withMessage('searchLoginTerm must be a string')
+            .trim(),
+
+        query('searchEmailTerm')
+            .optional()
+            .isString()
+            .withMessage('searchEmailTerm must be a string')
+            .trim(),
+
     ];
 }

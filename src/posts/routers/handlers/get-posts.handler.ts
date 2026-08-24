@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { postsService } from "../../application/posts.service";
 import { PostQueryInput } from "../input/post-query.input";
-import { mapToPostListPaginatedOutput } from "../mappers/map-post-input-dto-to-post.util";
+import { mapToPostListPaginatedOutput, postsQueryRepository } from "../../../posts/repositories/posts.query-repositories"
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
 import { HttpStatus } from "../../../core/types/http-statuses";
 
@@ -15,7 +15,7 @@ export async function getPostsHandler(
         const queryInput = req.query;
 
         // 2. Вызываем сервис, получаем данные
-        const { items, totalCount } = await postsService.findMany(queryInput)
+        const { items, totalCount } = await postsQueryRepository.findMany(queryInput)
 
         // 3. Форматируем ответ с пагинацией
         const postsListOutput = mapToPostListPaginatedOutput(items, {

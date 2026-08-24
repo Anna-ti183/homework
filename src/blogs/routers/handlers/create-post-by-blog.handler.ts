@@ -6,7 +6,8 @@ import { blogsService } from "../../application/blogs.service";
 import { HttpStatus } from "../../../core/types/http-statuses";
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
 import { postsService } from "../../../posts/application/posts.service";
-import { mapToPostOutput } from "../../../posts/routers/mappers/map-to-post-post.util";
+import { mapToPostOutput, postsQueryRepository } from "../../../posts/repositories/posts.query-repositories"
+import { blogsQueryRepository } from "../../repositories/blogs.query-repository";
 
 
 export async function createPostByBlogHandler(
@@ -18,7 +19,7 @@ export async function createPostByBlogHandler(
         const { title, shortDescription, content } = req.body;
 
     // 1. Проверяем, существует ли блог
-        await blogsService.findByIdOrFail(blogId);
+        await blogsQueryRepository.findByIdOrFail(blogId);
 
         // 2. Создаём пост
         const createdPostId = await postsService.create({
@@ -29,7 +30,7 @@ export async function createPostByBlogHandler(
         });
 
         // 3. Получаем созданный пост со всеми данными
-        const createdPost = await postsService.findByIdOrFail(createdPostId);
+        const createdPost = await postsQueryRepository.findByIdOrFail(createdPostId);
 
         // 4. Маппим в нужный формат
         const postOutput = mapToPostOutput(createdPost);

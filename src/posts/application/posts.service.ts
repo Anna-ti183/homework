@@ -7,35 +7,15 @@ import { PostQueryInput } from "../routers/input/post-query.input";
 import { NotFoundException } from '../../core/exceptions/not-found.exception';
 import { PostAttributes } from './dtos/post-attributes';
 import { blogsService } from '../../blogs/application/blogs.service';
+import { postsQueryRepository } from '../repositories/posts.query-repositories';
+import { blogsQueryRepository } from '../../blogs/repositories/blogs.query-repository';
 
 
 export const postsService = {
-    //Получить список постов с пагинацией
-    async findMany(
-        queryDto: PostQueryInput,
-    ): Promise<{ items: WithId<Post>[]; totalCount: number}> {
-        return postsRepository.findMany(queryDto);
-    },
 
- //Для эндпоинта GET /api/blogs/{blogId}/posts - Получить посты конкретного блога с пагинацией
-    async findByBlogId(
-        blogId: string,
-        queryDto: PostQueryInput
-    ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
-        return postsRepository.findByBlogId(blogId,queryDto)
-    },
-//Найти пост по ID или выбросить ошибку
-    async findByIdOrFail(id:string): Promise<WithId<Post>> {
-       const res = await postsRepository.findById(id);
-       if(res === null || !res){
-        throw new NotFoundException('Post not found')
-       }
-       return res;
-    },
-    
     //Создать новый пост (с blogName из блога)
     async create(dto: PostAttributes): Promise<string> {
-        const blog = await blogsService.findByIdOrFail(dto.blogId)
+        const blog = await blogsQueryRepository.findByIdOrFail(dto.blogId)
         const newPost: Post = {
             title: dto.title,
             shortDescription: dto.shortDescription,

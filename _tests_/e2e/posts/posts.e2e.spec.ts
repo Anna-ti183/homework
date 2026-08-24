@@ -11,16 +11,29 @@ import { createPost } from "../../utils/posts/create-post";
 import { getPostById } from "../../utils/posts/get-post-by-id";
 import { PostAttributes } from "../../../src/posts/application/dtos/post-attributes";
 import { updatePost } from "../../utils/posts/update-post";
+import { loginUserAuth } from "../../utils/auth/create-login-auth";
+import { createUser } from "../../utils/users/create-user";
 
 describe('Posts API', () => {
     const app = express();
     setupApp(app);
 
     const adminToken = generateBasicAuthToken();
+    let accessToken: string; //Создаём переменную, в которой будем хранить JWT. Она доступна всем тестам внутри describe.
+    const content = 'This is a valid comment'; //создаем общую переменную  content чтобы не создавать ее в каждом нужном тесте 
+
 
     beforeAll(async () => {
         await runDB(SETTINGS.MONGO_URL);
         await clearDb(app);
+
+        await createUser(app); //используем созданного юзера
+
+        const res = await loginUserAuth(app); //Выполняем настоящий login через API и получаем ответ сервера.
+
+        expect(res.status).toBe(HttpStatus.Ok); //Проверяем, что login действительно успешный — сервер вернул 200.
+
+        accessToken = res.body.accessToken; // Достаём JWT из ответа и сохраняем его в нашу переменную accessToken
     });
 
     afterAll(async () => {
@@ -111,13 +124,34 @@ describe('Posts API', () => {
         await request(app)
             .post('/blogs/6896f3a2b7c84d1e9f05a6c3/posts')
             .set('Authorization', adminToken)
-            .send({"content":"new post content","shortDescription":"description","title":"post title"})
+            .send({ "content": "new post content", "shortDescription": "description", "title": "post title" })
             .expect(HttpStatus.NotFound);
 
-             await request(app)
+        await request(app)
             .get('/blogs/6896f3a2b7c84d1e9f05a6c3/posts')
             .set('Authorization', adminToken)
             .expect(HttpStatus.NotFound);
     });
+
+    //должен возвращать комментарии, если пост с указанным postId существует
+    it('✅ should return comments if the post with the specified postId exists; GET /api/posts/:postId/comments', async () => {
+        const post = await createPost(app)
+        const postId = post.id
+        await request(app)
+            .get(`${POSTS_PATH}/${postId}/comments`)
+            .expect(HttpStatus.Ok)
+    });
+
+    //должен создать новый комментарий для существующего поста
+    it('✅ should create a new comment for an existing post; POST /api/posts/:postId/comments', async () => {
+        const post = await createPost(app)
+        const postId = post.id
+        await request(app)
+            .post(`${POSTS_PATH}/${postId}/comments`)
+            .set('Content-Type', 'application/json')
+            .set('Authorization', `Bearer ${accessToken}`)
+            .send({ content })
+            .expect(HttpStatus.Created)
+    })
 
 });

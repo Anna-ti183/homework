@@ -14,6 +14,11 @@ import { getIdPostHandler } from "./handlers/get-Id-post.handler";
 import { paginationAndSortingValidation } from "../../core/middlewares.validation/query-pagination-sorting.validation.middleware";
 import { PostSortField } from "./input/post-sort.field";
 import { sanitizeQueryParams } from "../../core/middlewares.validation/sanitize-query.middleware";
+import { getPostIdCommentHandler } from "./handlers/get-postId-comment.handler";
+import { createCommentHandler } from "./handlers/create-postId-comments";
+import { accessTokenGuard } from "../../auth/middleware/access-token.guard";
+import { commentInputDtoValidation } from "../../comments/validation/comment.input.dto.validation.middleware";
+import { CommentSortField } from "../../comments/router/input/comment-sort-field";
 
 
 export const postsRouter = Router({});
@@ -59,4 +64,20 @@ postsRouter
         idValidation,
         inputValidationResultMiddleware,
         deletePostHandler,
+    )
+
+    .post(
+        POSTS_ROUTERS.COMMENTS,
+        accessTokenGuard, // проверяем JWT
+        commentInputDtoValidation, //проверяем валидацию - content
+        inputValidationResultMiddleware, // если ошибки
+        createCommentHandler,
+    )
+
+    .get(
+        POSTS_ROUTERS.COMMENTS,
+        paginationAndSortingValidation(CommentSortField), //проверяем query
+        inputValidationResultMiddleware, // если ошибки
+        sanitizeQueryParams,
+        getPostIdCommentHandler,
     )

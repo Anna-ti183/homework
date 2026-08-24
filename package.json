@@ -16,9 +16,12 @@
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
+    "@types/jsonwebtoken": "^9.0.10",
+    "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
+    "jsonwebtoken": "^9.0.3",
     "mongodb": "^7.5.0"
   },
   "devDependencies": {

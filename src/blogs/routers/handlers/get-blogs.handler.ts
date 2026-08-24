@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
 import { BlogQueryInput } from "../input/blog-query.input";
-import { blogsService } from "../../application/blogs.service";
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
-import { mapToBlogListPaginatedOutput } from "../mappers/map-blog-input-dto-to-blog.util";
+import { mapToBlogListPaginatedOutput } from "../../repositories/blogs.query-repository";
+import { blogsQueryRepository } from "../../repositories/blogs.query-repository";
 
 export async function getBlogsHandler(
     req: Request<{}, {}, {}, BlogQueryInput>, // (Params) {}	Нет параметров в URL (нет /:id), ResBody	{}	Нет типизации для ответа, ReqBody	{}	Нет тела запроса (GET-запрос), ReqQuery	DriverQueryInput	Параметры запроса (query)
@@ -14,8 +14,8 @@ export async function getBlogsHandler(
         // 1. Берём query-параметры из запроса
         const queryInput = req.query;
 
-        // 2. Вызываем сервис, получаем данные
-        const { items, totalCount } = await blogsService.findMany(queryInput);
+        // 2. Вызываем репозиторий, получаем данные
+        const { items, totalCount } = await blogsQueryRepository.findMany(queryInput);
 
         // 3. Форматируем ответ с пагинацией
         const blogsListOutput = mapToBlogListPaginatedOutput(items, {  // Форматируем ответ в нужный пагинированный формат     //items — массив блогов (для текущей страницы)

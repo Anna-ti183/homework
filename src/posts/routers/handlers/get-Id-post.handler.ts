@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import { HttpStatus } from "../../../core/types/http-statuses";
 import { postsService } from "../../application/posts.service";
 import { errorsHandler } from "../../../core/exceptions/errors.handler";
-import { mapToPostOutput } from "../mappers/map-to-post-post.util";
+import { mapToPostOutput, postsQueryRepository } from "../../../posts/repositories/posts.query-repositories"
 
 export async function getIdPostHandler(
     req: Request<{ id: string }>,
@@ -11,7 +11,7 @@ export async function getIdPostHandler(
     try {
         const id = req.params.id //Берёт ID из URL
 
-        const post = await postsService.findByIdOrFail(id) //Ищет блог в БД
+        const post = await postsQueryRepository.findByIdOrFail(id) //Ищет блог в БД
 
         const postOutput = mapToPostOutput(post); //Преобразует в формат для ответа
 
