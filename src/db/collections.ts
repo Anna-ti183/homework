@@ -1,7 +1,7 @@
 import { Collection, Db } from "mongodb";
 import { Blog } from "../blogs/domain/blogs";
 import { Post } from "../posts/domain/posts";
-import { User } from "../users/domain/users";
+import { IUserDB } from "../users/domain/users";
 import { Comment } from "../comments/domain/comment";
 
 export const BLOG_COLLECTION_NAME = 'blogs';
@@ -14,14 +14,14 @@ export const COMMENT_COLLECTION_NAME = 'comments'
 // До этого момента она undefined, поэтому обращаться к ней можно только после runDB().
 export let blogCollection: Collection<Blog>;
 export let postCollection: Collection<Post>;
-export let userCollection: Collection<User>;
+export let userCollection: Collection<IUserDB>;
 export let commentCollection: Collection<Comment>
 
 // Создаём объект коллекции из подключённой базы.
 export function initCollections(db: Db): void {
     blogCollection = db.collection<Blog>(BLOG_COLLECTION_NAME)
     postCollection = db.collection<Post>(POST_COLLECTION_NAME)
-    userCollection = db.collection<User>(USER_COLLECTION_NAME)
+    userCollection = db.collection<IUserDB>(USER_COLLECTION_NAME)
     commentCollection = db.collection<Comment>(COMMENT_COLLECTION_NAME)
 }
 

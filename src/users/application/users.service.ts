@@ -1,9 +1,10 @@
-import { User } from "../domain/users";
+import { IUserDB } from "../domain/users";
 import { usersRepository } from "../repositories/users.repository";
 import { UserAttributes } from "./dtos/user-attributes";
 import argon2 from "argon2";
 import { BadRequestException } from "../../core/exceptions/bad-request.exception";
 import { argon2Service } from "../../auth/adapters/argon2.service";
+import { randomUUID } from "crypto";
 
 export const usersService = {
 
@@ -40,11 +41,18 @@ export const usersService = {
 
 
         //✅ создаем нового пользователя 
-        const newUser: User = {
+        const newUser: IUserDB = {
             login: dto.login,
             email: dto.email,
             password: hashedPassword, // ← сохраняем хеш!
             createdAt: new Date().toISOString(),
+
+
+            emailConfirmation: {
+                confirmationCode: randomUUID(),
+                expirationDate: new Date(Date.now() + 90 * 60 * 1000),
+                isConfirmed: false
+            }
         };
 
         return usersRepository.create(newUser);

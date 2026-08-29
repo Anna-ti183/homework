@@ -9,6 +9,9 @@ export async function createUserHandler(
     req: Request<{}, {}, UserAttributes>, ////  Дженерики -  P   ResBody ReqBody
     res: Response,
 ) {
+
+    console.log('🔥🔥🔥 MY CREATE USER HANDLER 🔥🔥🔥');
+    
     try {
         // 1. Создаем - (получаем ID)
         const createdUserId = await usersService.create(req.body);

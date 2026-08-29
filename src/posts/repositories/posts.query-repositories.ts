@@ -75,7 +75,7 @@ export const postsQueryRepository = {
         // 2️⃣ СОРТИРОВКА.  // Создаём объект для MongoDB: { поле:  -1 (desc) }
         const sortOptions: any = {};
         sortOptions[sortBy] = sortDirection === 'asc' ? 1 : -1;
-        console.log('sortOptions', sortOptions)
+     
 
 
         //3️⃣ ЗАПРОС К БД (с пагинацией)

@@ -1,10 +1,14 @@
 import { Router } from "express";
 import { inputValidationResultMiddleware } from "../../core/middlewares.validation/input-validator-result.middleware";
 import { AUTH_ROUTERS } from "../constant/auth.paths";
-import { authInputDtoValidation } from "../validation/auth.input-dto.validation-middleware";
+import { authInputDtoRegistrationValidation, authInputDtoRegistrConfirmValidator, authInputDtoValidation } from "../validation/auth.input-dto.validation-middleware";
 import { loginHandler } from "./handlers/login.handler";
 import { accessTokenGuard } from "../middleware/access-token.guard";
 import { meHandler } from "./handlers/get-auth-me.handler";
+import { registrationHandler } from "./handlers/registration.handler";
+import { registrConfirmHandler } from "./handlers/registr-confirm.handler";
+import { authInputDtoRegistrEmailResendingValidation } from "../validation/auth.input-dto.validation-middleware"
+import { registrEmailResendingHandler } from "./handlers/registr-Email-Resending.handler";
 
 
 
@@ -22,4 +26,25 @@ authRouter
     AUTH_ROUTERS.ME,
     accessTokenGuard,
     meHandler
+)
+
+.post(
+    AUTH_ROUTERS.REGISTRATION,
+    authInputDtoRegistrationValidation,
+    inputValidationResultMiddleware,
+    registrationHandler
+)
+
+.post(
+    AUTH_ROUTERS.REGISTRATION_CONFIRMATION,
+    authInputDtoRegistrConfirmValidator,
+    inputValidationResultMiddleware,
+    registrConfirmHandler
+)
+
+.post(
+    AUTH_ROUTERS.REGISTRATION_EMAIL_RESENDING,
+    authInputDtoRegistrEmailResendingValidation,
+    inputValidationResultMiddleware,
+    registrEmailResendingHandler
 )

@@ -1,6 +1,6 @@
 import { ObjectId, WithId } from "mongodb";
 import { UserQueryInput } from "../routers/input/user-query.input";
-import { User } from "../domain/users";
+import { IUserDB } from "../domain/users";
 import { userCollection } from "../../db/collections";
 import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { UserOutput } from "../routers/output/user.output";
@@ -12,7 +12,7 @@ export const usersQueryRepository = {
     //Получить список пользователей  с фильтрацией, пагинацией и сортировкой
     async findMany(
         queryDto: UserQueryInput,
-    ): Promise<{ items: WithId<User>[]; totalCount: number }> {
+    ): Promise<{ items: WithId<IUserDB>[]; totalCount: number }> {
         const {
             pageNumber,
             pageSize,
@@ -77,12 +77,12 @@ export const usersQueryRepository = {
     },
 
     //Найти пользователя  по ID
-    async findById(id: string): Promise<WithId<User> | null> {
+    async findById(id: string): Promise<WithId<IUserDB> | null> {
         return userCollection.findOne({ _id: new ObjectId(id) }); // правильный синтаксис для поиска id в Mongodb
     },
 
     //Найти пользователя  или выбросить ошибку
-    async findByOrFail(id: string): Promise<WithId<User>> {
+    async findByOrFail(id: string): Promise<WithId<IUserDB>> {
 
         if (!ObjectId.isValid(id)) { //проверка на валидность
             throw new NotFoundException('User not found');
@@ -99,7 +99,7 @@ export const usersQueryRepository = {
 }
 
 //✅ Для ВСЕХ ЭНДПОИНТОВ из БД в формат ответа клиенту.(view-model для ответа API)
-export function mapToUserOutput(user: WithId<User>): UserOutput {
+export function mapToUserOutput(user: WithId<IUserDB>): UserOutput {
     return {
         id: user._id.toString(),
         login: user.login,
@@ -110,7 +110,7 @@ export function mapToUserOutput(user: WithId<User>): UserOutput {
 
 //✅ Это маппер для пагинированного ответа со списком пользователей.
 export function mapToUserListPaginatedOutput(
-    users: WithId<User>[],
+    users: WithId<IUserDB>[],
     meta: { pageNumber: number; pageSize: number; totalCount: number },
 ): UserListPaginatedOutput {
     return mapToPaginatedOutputUniversal(users, meta, mapToUserOutput);

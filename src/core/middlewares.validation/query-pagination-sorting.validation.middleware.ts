@@ -15,8 +15,7 @@ export function paginationAndSortingValidation<T extends string>(
 ) {
     const allowedSortFields = Object.values(sortFieldsEnum);
     
-    console.log('sortFieldsEnum:', sortFieldsEnum);
-    console.log('Object.values:', Object.values(sortFieldsEnum));
+ 
     
     return [
         query('pageNumber')

@@ -9,25 +9,29 @@
     "dev": "nodemon --inspect dist/index.js",
     "jest": "jest -i",
     "lint": "eslint --fix .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test-z": "jest --config src/jest.config.js",
+    "test-w": "jest --config src/jest.config.js --watch"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.32.1",
   "dependencies": {
-    "@types/jsonwebtoken": "^9.0.10",
+    "@types/nodemailer": "^8.0.1",
     "argon2": "^0.45.1",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "express-validator": "^7.3.2",
     "jsonwebtoken": "^9.0.3",
-    "mongodb": "^7.5.0"
+    "mongodb": "^7.5.0",
+    "nodemailer": "^9.0.5"
   },
   "devDependencies": {
     "@jest/globals": "^30.4.1",
     "@types/express": "^5.0.6",
     "@types/jest": "^29.5.12",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.1.1",
     "@types/supertest": "^7.2.1",
     "@typescript-eslint/eslint-plugin": "^8.65.0",

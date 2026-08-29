@@ -9,7 +9,7 @@ export async function getUserHandler(
 ) {
     try {
 
-        console.log('RAW QUERY:', req.query);
+
         // 1. Берём query-параметры из запроса
         const queryInput = req.query;
 
