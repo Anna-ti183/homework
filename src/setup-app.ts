@@ -1,4 +1,5 @@
 import express, { Express, Request, Response } from 'express';
+import cookieParser from 'cookie-parser';
 import { HttpStatus } from './core/types/http-statuses'
 import { BLOGS_PATH } from './blogs/constant/blogs.paths';
 import { blogsRouter } from './blogs/routers/blogs.router';
@@ -15,9 +16,11 @@ import { commentsRouter } from './comments/router/comment.router';
 
 
 
+
 export const setupApp = (app: Express) => {
   // express.json() парсит JSON из тела запроса и кладёт его в req.body.
   app.use(express.json());
+  app.use(cookieParser());
 
   // Health-check: простой ответ, что сервер жив.
   app.get('/', (req: Request, res: Response) => {
@@ -32,6 +35,7 @@ export const setupApp = (app: Express) => {
   app.use(USERS_PATH, usersRouter);
   app.use(AUTH_PATH, authRouter);
   app.use(COMMENTS_PATH, commentsRouter);
+  
 
 
   return app;

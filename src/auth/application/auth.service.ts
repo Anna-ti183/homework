@@ -7,13 +7,17 @@ import { emailExamples } from "../adapters/email.service";
 import { randomUUID } from "crypto";
 import { IUserDB } from "../../users/domain/users";
 import { BadRequestException } from "../../core/exceptions/bad-request.exception";
+import { refreshTokenBlacklist } from "../../blacklist-refreshtoken/repositories/refreshToken-blacklist.repository";
+import ms from 'ms';
+import { SETTINGS } from "../../settings/config";
+import { blacklistCollection } from "../../db/collections";
 
 
 
 export const authService = {
 
     // 1. Ищем пользователя по логину ИЛИ email
-    async loginUser(dto: AuthAttributes): Promise<string | null> {
+    async loginUser(dto: AuthAttributes): Promise<{ accessToken: string, refreshToken: string } | null> {
         const user = await usersRepository.findByLoginOrEmail(
             dto.loginOrEmail,
             dto.loginOrEmail,
@@ -32,9 +36,10 @@ export const authService = {
             return null;
         }
 
-        const accessToken = await jwtService.createToken(user._id.toString())
+        const accessToken = await jwtService.createAccessToken(user._id.toString());
+        const refreshToken = await jwtService.createRefreshToken(user._id.toString());
 
-        return accessToken;
+        return { accessToken, refreshToken };
     },
 
     //регистрация пользователя
@@ -179,6 +184,58 @@ export const authService = {
         }
 
         // если польз-ль не подтвержден отправляем повторно 
+        return true;
+    },
+
+    //Мы проверяем старый refresh token, запрещаем его повторное использование через blacklist 
+    //и выдаём пользователю новую пару access/refresh токенов.
+    async refreshTokens(oldRefreshToken: string): Promise<{ accessToken: string, refreshToken: string } | null> {
+
+        const refTokenPayload = await jwtService.verifyToken(oldRefreshToken) //refTokenPayload — это payload проверенного refresh-токена.
+        if (refTokenPayload === null) return null; //токен невалидный или истёк 
+
+        const token = await refreshTokenBlacklist.findByToken(oldRefreshToken)//передаём в репозиторий старый refreshToken
+        if (token) return null; // если есть в БД тогда не используем
+
+        const userId = refTokenPayload.userId //достаем из refTokenPayload наш userId
+
+        const expiresAt = new Date(Date.now() + ms(SETTINGS.RT_TIME)); //20 c
+
+        //Добавили старый token в blacklist
+        const refreshTokens = {
+            token: oldRefreshToken,
+            userId: userId,
+            expiresAt: expiresAt
+        }
+        await refreshTokenBlacklist.create(refreshTokens) //старый refreshToken отправили в Blacklist
+
+        //Создали новую пару
+        const accessToken = await jwtService.createAccessToken(userId);
+        const refreshToken = await jwtService.createRefreshToken(userId);
+
+        return { accessToken, refreshToken };
+    },
+
+    async logout(oldRefreshToken: string): Promise<boolean> {
+        const refTokenPayload = await jwtService.verifyToken(oldRefreshToken) //refTokenPayload — это payload проверенного refresh-токена.
+        if (refTokenPayload === null) return false; //JWT невалидный или истёк 
+
+        const userId = refTokenPayload.userId //достаем из refTokenPayload наш userId
+
+        const tokenBlackList = await refreshTokenBlacklist.findByToken(oldRefreshToken) // JWT ищем в blacklist
+
+        if (tokenBlackList) return false; //есть в blacklist → false
+
+
+        const expiresAt = new Date(Date.now() + ms(SETTINGS.RT_TIME)); //20 c
+
+        //Добавляем старый token в blacklist
+        const refreshTokens = {
+            token: oldRefreshToken,
+            userId: userId,
+            expiresAt: expiresAt
+        }
+        await refreshTokenBlacklist.create(refreshTokens) //старый refreshToken отправили в Blacklist
         return true;
     }
 }

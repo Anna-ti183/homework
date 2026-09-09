@@ -9,6 +9,8 @@ import { registrationHandler } from "./handlers/registration.handler";
 import { registrConfirmHandler } from "./handlers/registr-confirm.handler";
 import { authInputDtoRegistrEmailResendingValidation } from "../validation/auth.input-dto.validation-middleware"
 import { registrEmailResendingHandler } from "./handlers/registr-Email-Resending.handler";
+import { refreshTokenHandler } from "./handlers/refreshToken.handler";
+import { logoutHandler } from "./handlers/logout.handler";
 
 
 
@@ -47,4 +49,14 @@ authRouter
     authInputDtoRegistrEmailResendingValidation,
     inputValidationResultMiddleware,
     registrEmailResendingHandler
+)
+
+.post(
+    AUTH_ROUTERS.REFRESH_TOKEN,
+    refreshTokenHandler
+)
+
+.post(
+    AUTH_ROUTERS.LOGOUT,
+    logoutHandler
 )

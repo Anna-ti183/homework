@@ -16,11 +16,7 @@ export const nodemailerService = {
       auth: { 
         user: SETTINGS.EMAIL, 
         pass: SETTINGS.EMAIL_PASS, },
-   /*   service: 'gmail', // Отправляй письма через Gmail
-      auth: {
-        user: SETTINGS.EMAIL, // а вот логин от почтового аккаунта
-        pass: SETTINGS.EMAIL_PASS, // а вот пароль от почтового аккаунта
-      },*/
+
     });
 
     let info = await transporter.sendMail({ //sendMail() отправляет письмо

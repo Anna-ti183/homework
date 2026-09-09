@@ -6,22 +6,28 @@ import { AuthAttributes } from "../../application/dtos/auth.attributes";
 
 
 export async function loginHandler(
-    req: Request<{},{}, AuthAttributes>,
+    req: Request<{}, {}, AuthAttributes>,
     res: Response,
 ) {
 
-    try{
+    try {
         // 1. Вызываем сервис для логина
-        const accessToken = await authService.loginUser(req.body);
+        const tokens = await authService.loginUser(req.body);
+
 
         // 2. Если accessToken есть возвращаем статус 200 и сам токен
-        if(accessToken){
+        if (tokens) {
+            const accessToken = tokens.accessToken
+            const refreshToken = tokens.refreshToken
+
+            res.cookie('refreshToken', refreshToken, { httpOnly: true, secure: true, })
             res.status(HttpStatus.Ok).send({ accessToken })
+
         } else {
             res.status(HttpStatus.Unauthorized).send()
         }
 
-    }  catch (e: unknown) {
-            errorsHandler(e,res);
-        }
+    } catch (e: unknown) {
+        errorsHandler(e, res);
+    }
 }

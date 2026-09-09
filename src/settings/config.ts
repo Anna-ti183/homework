@@ -17,6 +17,7 @@ export const SETTINGS = {
     DB_NAME: env.DB_NAME || 'test',
     SECRET_KEY: env.SECRET_KEY as string,
     AC_TIME: env.AC_TIME as StringValue,
+    RT_TIME: env.RT_TIME as StringValue,
     EMAIL: process.env.EMAIL as string,
     EMAIL_PASS: process.env.EMAIL_PASS as string,
 };
