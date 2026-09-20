@@ -5,6 +5,9 @@ import { SETTINGS } from "./settings/config";
 
 const bootstap = async () => {
     const app = express();
+
+    app.set('trust proxy', true); //Для получения корректного ip-адреса
+
     setupApp(app);
     const PORT = SETTINGS.PORT;
 

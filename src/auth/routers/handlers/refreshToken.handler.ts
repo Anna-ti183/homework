@@ -9,7 +9,7 @@ export async function refreshTokenHandler(
 ){
     try{
         const oldRefreshToken = req.cookies.refreshToken //достаем старый токен из cookie
-        if(!oldRefreshToken){
+        if(!oldRefreshToken){  //если клиент не прислал корректный refresh token
          return res.status(HttpStatus.Unauthorized).send()
         }; 
 

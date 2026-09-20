@@ -8,15 +8,15 @@ export const jwtService = {
     });
   },
 
-  async createRefreshToken(userId: string): Promise<string> { //Создание Refresh токена 
-    return jwt.sign({ userId }, SETTINGS.SECRET_KEY, {
+  async createRefreshToken(userId: string, deviceId: string): Promise<string> { //Создание Refresh токена 
+    return jwt.sign({ userId, deviceId }, SETTINGS.SECRET_KEY, { // попадает внутрь JWT
       expiresIn: SETTINGS.RT_TIME, //20 s
     });
   },
 
-  async verifyToken(token: string): Promise<{ userId: string } | null> { // Проверка токена
+  async verifyToken(token: string): Promise<{ userId: string, deviceId: string, iat: number, exp: number } | null> { // Проверка токена
     try {
-      return jwt.verify(token, SETTINGS.SECRET_KEY) as { userId: string };
+      return jwt.verify(token, SETTINGS.SECRET_KEY) as { userId: string, deviceId: string, iat: number, exp: number };
     } catch (error) {
       console.error("Token verify some error");
       return null;

@@ -13,6 +13,8 @@ import { AUTH_PATH } from './auth/constant/auth.paths';
 import { authRouter } from './auth/routers/auth.router';
 import { COMMENTS_PATH } from './comments/constants/comments.path';
 import { commentsRouter } from './comments/router/comment.router';
+import { SECURITYDEVICES_PATH } from './securityDevices/constsnt/securityDevices.paths';
+import { securityDevicesRouter } from './securityDevices/routers/securityDevices.router';
 
 
 
@@ -35,6 +37,7 @@ export const setupApp = (app: Express) => {
   app.use(USERS_PATH, usersRouter);
   app.use(AUTH_PATH, authRouter);
   app.use(COMMENTS_PATH, commentsRouter);
+  app.use(SECURITYDEVICES_PATH, securityDevicesRouter)
   
 
 

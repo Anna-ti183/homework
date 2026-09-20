@@ -4,40 +4,67 @@ import { argon2Service } from "../adapters/argon2.service";
 import { jwtService } from "../adapters/jwt.service";
 import { nodemailerService } from "../adapters/nodemailer.service";
 import { emailExamples } from "../adapters/email.service";
-import { randomUUID } from "crypto";
+import { randomUUID, verify } from "crypto";
 import { IUserDB } from "../../users/domain/users";
 import { BadRequestException } from "../../core/exceptions/bad-request.exception";
 import { refreshTokenBlacklist } from "../../blacklist-refreshtoken/repositories/refreshToken-blacklist.repository";
 import ms from 'ms';
 import { SETTINGS } from "../../settings/config";
 import { blacklistCollection } from "../../db/collections";
+import { Session } from "inspector";
+import { securityDevicesOutput } from "../../securityDevices/output/securityDevices.output";
+import { NotFoundException } from "../../core/exceptions/not-found.exception";
+import { ForbiddenException } from "../../core/exceptions/forbidden.exception";
 
 
 
 export const authService = {
 
     // 1. Ищем пользователя по логину ИЛИ email
-    async loginUser(dto: AuthAttributes): Promise<{ accessToken: string, refreshToken: string } | null> {
+    async loginUser(dto: AuthAttributes, ip: string, deviceName: string): Promise<{ accessToken: string, refreshToken: string } | null> {
+
         const user = await usersRepository.findByLoginOrEmail(
             dto.loginOrEmail,
             dto.loginOrEmail,
         );
 
         // 2. Если пользователь не найден
-        if (!user) {
-            return null;
-        }
+        if (!user) return null;
 
         // 3. Проверяем пароль
         const isValid = await argon2Service.checkPassword(dto.password, user.password); //dto.password - обычный пароль, user.password - хеш из БД
 
         // 4. Если пароль неверный
-        if (!isValid) {
-            return null;
+        if (!isValid) return null;
+
+        // 5. Генерируем id для deviceId
+        const deviceId = randomUUID();
+
+        //6. Создаем новый accessToken и refreshToken 
+        const accessToken = await jwtService.createAccessToken(user._id.toString());
+        const refreshToken = await jwtService.createRefreshToken(user._id.toString(), deviceId);
+
+        //7. Создаем payload для для создания сессии (тут хранятся  iat и exp)
+        const payload = await jwtService.verifyToken(refreshToken)
+
+        if (!payload) return null;
+
+        const iat = payload.iat //достаём iat из  jwtService.verifyToken
+        const exp = payload.exp //достаём exp из  jwtService.verifyToken
+
+        //8.создаем новую сессию 
+        const newSession = {
+            user_id: user._id.toString(),
+            device_id: deviceId,
+            iat: iat,
+            device_name: deviceName,
+            ip: ip,
+            exp: exp,
+            lastActiveDate: new Date()
         }
 
-        const accessToken = await jwtService.createAccessToken(user._id.toString());
-        const refreshToken = await jwtService.createRefreshToken(user._id.toString());
+        //9. сохранем в репозит для отправки в БД
+        await usersRepository.createSession(newSession)
 
         return { accessToken, refreshToken };
     },
@@ -187,55 +214,114 @@ export const authService = {
         return true;
     },
 
-    //Мы проверяем старый refresh token, запрещаем его повторное использование через blacklist 
-    //и выдаём пользователю новую пару access/refresh токенов.
+
     async refreshTokens(oldRefreshToken: string): Promise<{ accessToken: string, refreshToken: string } | null> {
 
+        //проверяем что refreshToken — настоящий и не просроченный
         const refTokenPayload = await jwtService.verifyToken(oldRefreshToken) //refTokenPayload — это payload проверенного refresh-токена.
-        if (refTokenPayload === null) return null; //токен невалидный или истёк 
+        if (refTokenPayload === null) return null;
 
-        const token = await refreshTokenBlacklist.findByToken(oldRefreshToken)//передаём в репозиторий старый refreshToken
-        if (token) return null; // если есть в БД тогда не используем
+        //взять deviceId и userId и iat из refToken
+        const deviceId = refTokenPayload.deviceId;
+        const userId = refTokenPayload.userId;
 
-        const userId = refTokenPayload.userId //достаем из refTokenPayload наш userId
+        //находим конкретную сессию - конкретного пользователя на конкретном устройстве
+        const session = await usersRepository.findBySession(userId, deviceId)
+        if (!session) return null;
 
-        const expiresAt = new Date(Date.now() + ms(SETTINGS.RT_TIME)); //20 c
+        //проверяем соответствует ли текущий refreshToken той Session, которую мы нашли
+        const iatJwt = refTokenPayload.iat;
+        const iatSession = session.iat;
+        if (iatJwt !== iatSession) return null;
 
-        //Добавили старый token в blacklist
-        const refreshTokens = {
-            token: oldRefreshToken,
-            userId: userId,
-            expiresAt: expiresAt
-        }
-        await refreshTokenBlacklist.create(refreshTokens) //старый refreshToken отправили в Blacklist
-
-        //Создали новую пару
+        //если 3 проверки прошли создаем новую пару 
         const accessToken = await jwtService.createAccessToken(userId);
-        const refreshToken = await jwtService.createRefreshToken(userId);
+        const refreshToken = await jwtService.createRefreshToken(userId, deviceId);
+
+        //вынимаем iat и exp из нового refreshToken для обновления сессии
+        const refToken = await jwtService.verifyToken(refreshToken)
+        if (!refToken) return null;
+        const newIat = refToken.iat;
+        const newExp = refToken.exp;
+
+        //создаем новую дату начала сессии
+        const lastActiveDate = new Date();
+
+        //обновляем текущую сессию 
+        await usersRepository.updateSession(userId, deviceId, newIat, newExp, lastActiveDate)
 
         return { accessToken, refreshToken };
     },
 
+
+
     async logout(oldRefreshToken: string): Promise<boolean> {
+
+        //проверяем что refreshToken — настоящий и не просроченный
         const refTokenPayload = await jwtService.verifyToken(oldRefreshToken) //refTokenPayload — это payload проверенного refresh-токена.
         if (refTokenPayload === null) return false; //JWT невалидный или истёк 
 
-        const userId = refTokenPayload.userId //достаем из refTokenPayload наш userId
+        //взять deviceId и userId и iat из refToken - для соответствия refToken с текущей сессией
+        const userId = refTokenPayload.userId;
+        const deviceId = refTokenPayload.deviceId;
+        const iatJwt = refTokenPayload.iat
 
-        const tokenBlackList = await refreshTokenBlacklist.findByToken(oldRefreshToken) // JWT ищем в blacklist
+        //нашли Session по userId + deviceId
+        const session = await usersRepository.findBySession(userId,deviceId)
+        if(!session) return false;
 
-        if (tokenBlackList) return false; //есть в blacklist → false
+        //проверили, что iat JWT совпадает с iat Session
+        const iatSession = session.iat;
+        if(iatJwt !== iatSession) return false;
 
+        //удаляем сессию
+        await usersRepository.deleteSession(userId,deviceId);
 
-        const expiresAt = new Date(Date.now() + ms(SETTINGS.RT_TIME)); //20 c
-
-        //Добавляем старый token в blacklist
-        const refreshTokens = {
-            token: oldRefreshToken,
-            userId: userId,
-            expiresAt: expiresAt
-        }
-        await refreshTokenBlacklist.create(refreshTokens) //старый refreshToken отправили в Blacklist
         return true;
+    },
+
+
+    //SECURITYDEVICES
+    //получаем все сессии
+    async securityDevices(userId: string ): Promise <securityDevicesOutput[]> {
+        //получаем все сессии конкретного пользователя
+        const activeSessions = await usersRepository.allSessions(userId); 
+
+        //преобразуем Session в DeviceOutput
+        return activeSessions.map((session) => ({
+            ip: session.ip,
+            title: session.device_name,
+            lastActiveDate: session.lastActiveDate,
+            deviceId: session.device_id
+        }))
+
+    }, 
+
+    //удалить все сессии кроме текущей
+    async deleteSecurityDevicesExpectOne(userId: string, deviceId: string): Promise <void> {
+       await usersRepository.deleteSecDevExpectCurrent(userId,deviceId)
+    },
+
+    //удалить только текущую сессию
+    async deleteOneSession(userId: string, deviceId: string): Promise <void> {
+
+        // Ищем Session по  deviceId
+        const oneSession = await usersRepository.findByDeviceId(deviceId)
+        if(!oneSession) {
+            throw new NotFoundException('Session not found')
+        }
+
+        //сравниваем  user_id сессии с  user_id из JWT
+        const userIdSession = oneSession.user_id;
+        if(userId !== userIdSession) {
+            throw new ForbiddenException ('Invalid user')
+        }
+
+        //удаляем сессию которую пользователь указал через :deviceId
+        await usersRepository.deleteOneSession(deviceId)
+
     }
+
+
+
 }

@@ -11,6 +11,7 @@ import { authInputDtoRegistrEmailResendingValidation } from "../validation/auth.
 import { registrEmailResendingHandler } from "./handlers/registr-Email-Resending.handler";
 import { refreshTokenHandler } from "./handlers/refreshToken.handler";
 import { logoutHandler } from "./handlers/logout.handler";
+import { rateLimitMiddleware } from "../../core/middlewares.validation/rate-limit.middleware";
 
 
 
@@ -21,6 +22,7 @@ authRouter
     AUTH_ROUTERS.LOGIN,
     authInputDtoValidation,
     inputValidationResultMiddleware,
+    rateLimitMiddleware,
     loginHandler
 )
 
@@ -34,6 +36,7 @@ authRouter
     AUTH_ROUTERS.REGISTRATION,
     authInputDtoRegistrationValidation,
     inputValidationResultMiddleware,
+    rateLimitMiddleware,
     registrationHandler
 )
 
@@ -41,6 +44,7 @@ authRouter
     AUTH_ROUTERS.REGISTRATION_CONFIRMATION,
     authInputDtoRegistrConfirmValidator,
     inputValidationResultMiddleware,
+    rateLimitMiddleware,
     registrConfirmHandler
 )
 
@@ -48,6 +52,7 @@ authRouter
     AUTH_ROUTERS.REGISTRATION_EMAIL_RESENDING,
     authInputDtoRegistrEmailResendingValidation,
     inputValidationResultMiddleware,
+    rateLimitMiddleware,
     registrEmailResendingHandler
 )
 

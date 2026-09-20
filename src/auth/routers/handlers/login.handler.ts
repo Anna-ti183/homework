@@ -11,9 +11,11 @@ export async function loginHandler(
 ) {
 
     try {
+       const ip = req.ip;  //IP
+        const deviceName = req.headers['user-agent'] || 'Unknown device'; //deviceName
+       
         // 1. Вызываем сервис для логина
-        const tokens = await authService.loginUser(req.body);
-
+        const tokens = await authService.loginUser(req.body, ip!,deviceName);
 
         // 2. Если accessToken есть возвращаем статус 200 и сам токен
         if (tokens) {
