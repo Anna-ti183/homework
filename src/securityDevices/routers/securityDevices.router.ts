@@ -1,10 +1,10 @@
 import { Router } from "express";
 import { SECURITYDEVICES_ROUTERS } from "../constsnt/securityDevices.paths";
-import { securityDeviceshandler } from "./handler/get-securityDevices.handler";
 import { securDevicesRefTokenMiddleware } from "../middleware/securityDevices.middleware";
-import { deleteSecurityDevices } from "./handler/delete-securityDevice.handler";
-import { deleteSecurityDevicesDeviceId } from "./handler/delete-deviseId.securityDevices.handler";
+import { container } from "../../composition-root";
+import { SecurityDevicesController } from "./handler/handler";
 
+const securityDevicesController = container.get(SecurityDevicesController)
 
 export const securityDevicesRouter = Router({});
 
@@ -12,16 +12,16 @@ securityDevicesRouter
 .get(
     SECURITYDEVICES_ROUTERS.ROOT,
     securDevicesRefTokenMiddleware,
-    securityDeviceshandler
+    securityDevicesController.getSecurityDevices.bind(securityDevicesController)
 )
 .delete(
     SECURITYDEVICES_ROUTERS.ROOT,
     securDevicesRefTokenMiddleware,
-    deleteSecurityDevices
+    securityDevicesController.getSecurityDevices.bind(securityDevicesController)
 )
 
 .delete(
     SECURITYDEVICES_ROUTERS.DEVICE_ID,
     securDevicesRefTokenMiddleware,
-    deleteSecurityDevicesDeviceId,
+    securityDevicesController.deleteDeviceIdSecurityDevices.bind(securityDevicesController)
 )

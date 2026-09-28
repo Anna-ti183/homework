@@ -4,7 +4,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { jwtService } from '../../auth/adapters/jwt.service';
 import { HttpStatus } from '../../core/types/http-statuses';
-import { usersRepository } from '../../users/repositories/users.repository';
+import { usersRepository } from '../../composition-root';
 
 export async function securDevicesRefTokenMiddleware (
     req: Request,

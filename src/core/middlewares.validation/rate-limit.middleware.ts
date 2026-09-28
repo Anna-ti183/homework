@@ -2,7 +2,7 @@
 // который будет считать количество документов по фильтру (IP, URL, date >= текущей даты - 10 сек).
 
 import { NextFunction, Request, Response } from 'express';
-import { usersRepository } from '../../users/repositories/users.repository'
+import { usersRepository } from '../../composition-root'
 import { HttpStatus } from '../types/http-statuses';
 
 export async function rateLimitMiddleware (

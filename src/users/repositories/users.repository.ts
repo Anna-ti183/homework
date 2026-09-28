@@ -5,8 +5,10 @@ import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { ratelimit } from "../../core/rate-limit/domain/rate-limit";
 import { session } from "../../sessions/domain/sessions";
 import { Session } from "node:inspector";
+import { injectable } from "inversify";
 
-export const usersRepository = {
+@injectable()
+export class UsersRepository {
 
     // ✅ Метод для проверки логина и email одним запросом
     async findByLoginOrEmail(login: string, email: string): Promise<WithId<IUserDB> | null> {
@@ -16,23 +18,23 @@ export const usersRepository = {
                 { email: email }
             ]
         });
-    },
+    }
 
 
     //Найти пользователя  по ID
     async findById(id: string): Promise<WithId<IUserDB> | null> {
         return userCollection.findOne({ _id: new ObjectId(id) });
-    },
+    }
 
     //Найти пользователя по code
     async findByCode(code: string): Promise<WithId<IUserDB> | null> {
         return userCollection.findOne({ 'emailConfirmation.confirmationCode': code }) //"emailConfirmation.confirmationCode" — где ищем; code — что ищем.
-    },
+    }
 
     //Найти пользователя по email
     async findByEmail(email: string): Promise<WithId<IUserDB> | null> {
         return userCollection.findOne({ email })
-    },
+    }
 
     //Сохранить нового пользователя  в БД
     async create(newUser: IUserDB): Promise<string> { //newUser: User — принимает объект юзера (с уже добавленными createdAt)
@@ -41,7 +43,7 @@ export const usersRepository = {
         const insertResult = await userCollection.insertOne(newUser); //Вставляет новый документ в коллекцию MongoDB
 
         return insertResult.insertedId.toString() //Содержит сгенерированный MongoDB ObjectId, который преобразует в строку 
-    },
+    }
 
     // Удалить пользователя 
     async delete(id: string): Promise<void> {
@@ -59,7 +61,7 @@ export const usersRepository = {
         }
 
         return;
-    },
+    }
 
     //обновить isConfirmed из false  на true (Найди пользователя с этим _id → поставь emailConfirmation.isConfirmed в true.)
     async update(id: string): Promise<void> {
@@ -70,7 +72,7 @@ export const usersRepository = {
                     { "emailConfirmation.isConfirmed": true } //В MongoDB путь к вложенному полю записывается строкой
             })
 
-    },
+    }
 
     //обновляем код подтверждения
     async updateCode(id: string, confirmationCode: string, expirationDate: Date): Promise<void> {
@@ -83,7 +85,7 @@ export const usersRepository = {
                 $set:  // обновляет confirmationCode, expirationDate
                     { 'emailConfirmation.confirmationCode': confirmationCode, 'emailConfirmation.expirationDate': expirationDate },
             })
-    },
+    }
 
 
     //RITELIMITCOLLECTION
@@ -98,12 +100,12 @@ export const usersRepository = {
             date: { $gte: tenSeconds } // $gt - это >=
         })
         return count;
-    },
+    }
 
     //сохраняем обращение/запрос к API
     async saveRequest(dto: ratelimit): Promise<void> {
         await rateLimitCollection.insertOne(dto)
-    },
+    }
 
 
     // SESSION
@@ -112,7 +114,7 @@ export const usersRepository = {
 
     async createSession(newSession: session): Promise<void> {
         await deviceSessionCollection.insertOne(newSession)
-    },
+    }
 
     // поиск сессии по user_id и device_id 
     // (потому что юзер - 1 а девайсов может быть 3)
@@ -120,7 +122,7 @@ export const usersRepository = {
         const session = await deviceSessionCollection.findOne({user_id, device_id})
         if(!session) return null;
         return session;
-    },
+    }
 
     //обновляем сессию 
     async updateSession(user_id: string, device_id: string, iat: number, exp:number, lastActiveDate: Date): Promise <void> {
@@ -131,12 +133,12 @@ export const usersRepository = {
                 {'iat': iat, 'exp': exp, 'lastActiveDate': lastActiveDate} //что обновляем
             }
         )
-    },
+    }
 
     //удаляем сессию 
     async deleteSession(user_id: string, device_id: string): Promise <void> {
         await deviceSessionCollection.deleteOne({user_id,device_id})
-    },
+    }
 
 
     //SECURITYDEVICES 
@@ -146,7 +148,7 @@ export const usersRepository = {
     async allSessions(user_id: string): Promise <session[]> { //session[] → TypeScript говорит, что это массив Session.
       const sessions =  await deviceSessionCollection.find({user_id}).toArray() //toArray() → превращаем результат find() в массив
       return sessions;
-    },
+    }
 
     //удалить все сессии кроме текущей 
     // user_id равен переданному userId, а device_id не равен переданному deviceId.
@@ -158,7 +160,7 @@ export const usersRepository = {
                 device_id: {$ne: deviceId} //$ne (не равно)
             }
         ) 
-    }, 
+    }
 
     //поиск сессии по deviceId
     async findByDeviceId(deviceId: string): Promise <session | null> {
@@ -166,16 +168,12 @@ export const usersRepository = {
         const session = await deviceSessionCollection.findOne({device_id: deviceId})
         if(!session) return null;
         return session;
-    },
+    }
 
     //удалить текущую сессию 
     async deleteOneSession(deviceId: string): Promise <void> {
         await deviceSessionCollection.deleteOne({device_id: deviceId})
     }
-
-
-
-
-
-
 }
+
+

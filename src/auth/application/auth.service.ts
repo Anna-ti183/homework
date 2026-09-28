@@ -1,4 +1,4 @@
-import { usersRepository } from "../../users/repositories/users.repository";
+import { UsersRepository } from "../../users/repositories/users.repository";
 import { AuthAttributes, RegistrConfirmDTO, RegistrDTO, RegistrEmailResending } from "./dtos/auth.attributes";
 import { argon2Service } from "../adapters/argon2.service";
 import { jwtService } from "../adapters/jwt.service";
@@ -7,23 +7,22 @@ import { emailExamples } from "../adapters/email.service";
 import { randomUUID, verify } from "crypto";
 import { IUserDB } from "../../users/domain/users";
 import { BadRequestException } from "../../core/exceptions/bad-request.exception";
-import { refreshTokenBlacklist } from "../../blacklist-refreshtoken/repositories/refreshToken-blacklist.repository";
 import ms from 'ms';
 import { SETTINGS } from "../../settings/config";
-import { blacklistCollection } from "../../db/collections";
 import { Session } from "inspector";
 import { securityDevicesOutput } from "../../securityDevices/output/securityDevices.output";
 import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { ForbiddenException } from "../../core/exceptions/forbidden.exception";
+import { inject, injectable } from "inversify";
 
+@injectable()
+export class AuthService {
+    constructor(@inject(UsersRepository) protected usersRepository: UsersRepository){}
 
-
-export const authService = {
-
-    // 1. Ищем пользователя по логину ИЛИ email
+     // 1. Ищем пользователя по логину ИЛИ email
     async loginUser(dto: AuthAttributes, ip: string, deviceName: string): Promise<{ accessToken: string, refreshToken: string } | null> {
 
-        const user = await usersRepository.findByLoginOrEmail(
+        const user = await this.usersRepository.findByLoginOrEmail(
             dto.loginOrEmail,
             dto.loginOrEmail,
         );
@@ -64,14 +63,14 @@ export const authService = {
         }
 
         //9. сохранем в репозит для отправки в БД
-        await usersRepository.createSession(newSession)
+        await this.usersRepository.createSession(newSession)
 
         return { accessToken, refreshToken };
-    },
+    }
 
     //регистрация пользователя
     async registrUser(dto: RegistrDTO): Promise<boolean> {
-        const user = await usersRepository.findByLoginOrEmail(
+        const user = await this.usersRepository.findByLoginOrEmail(
             dto.login,
             dto.email,
         );
@@ -110,7 +109,7 @@ export const authService = {
             }
 
         };
-        await usersRepository.create(newUser) // сохранить юзера в базе данных
+        await this.usersRepository.create(newUser) // сохранить юзера в базе данных
 
         //отправку сообщения лучше обернуть в try-catch, чтобы при ошибке(например отвалиться отправка) приложение не падало
         try {
@@ -123,11 +122,11 @@ export const authService = {
             console.error('Send email error', e); //залогировать ошибку при отправке сообщения
         }
         return true;
-    },
+    }
 
     //Подтверждение регистрации пользователя
     async registrConfirmUser(dto: RegistrConfirmDTO): Promise<boolean> {
-        const user = await usersRepository.findByCode(dto.code);
+        const user = await this.usersRepository.findByCode(dto.code);
 
         //усли пользователь по коду не найден
         if (!user) {
@@ -159,15 +158,15 @@ export const authService = {
             ]);
         }
 
-        await usersRepository.update(user._id.toString()) //находим по id польз-я и обновляем его isConfirmed
+        await this.usersRepository.update(user._id.toString()) //находим по id польз-я и обновляем его isConfirmed
 
         return true
-    },
+    }
 
     //Повторная отправка письма для регистрации
     async registrEmailResending(dto: RegistrEmailResending): Promise<boolean> {
         //нашли польз-ля
-        const user = await usersRepository.findByEmail(dto.email)
+        const user = await this.usersRepository.findByEmail(dto.email)
 
         if (!user) {
             throw new BadRequestException([
@@ -193,7 +192,7 @@ export const authService = {
         const expirationDate = new Date(Date.now() + 90 * 60 * 1000);
 
         //обновили в БД
-        await usersRepository.updateCode(
+        await this.usersRepository.updateCode(
             user._id.toString(),
             confirmationCode,
             expirationDate
@@ -212,7 +211,7 @@ export const authService = {
 
         // если польз-ль не подтвержден отправляем повторно 
         return true;
-    },
+    }
 
 
     async refreshTokens(oldRefreshToken: string): Promise<{ accessToken: string, refreshToken: string } | null> {
@@ -226,7 +225,7 @@ export const authService = {
         const userId = refTokenPayload.userId;
 
         //находим конкретную сессию - конкретного пользователя на конкретном устройстве
-        const session = await usersRepository.findBySession(userId, deviceId)
+        const session = await this.usersRepository.findBySession(userId, deviceId)
         if (!session) return null;
 
         //проверяем соответствует ли текущий refreshToken той Session, которую мы нашли
@@ -248,10 +247,10 @@ export const authService = {
         const lastActiveDate = new Date();
 
         //обновляем текущую сессию 
-        await usersRepository.updateSession(userId, deviceId, newIat, newExp, lastActiveDate)
+        await this.usersRepository.updateSession(userId, deviceId, newIat, newExp, lastActiveDate)
 
         return { accessToken, refreshToken };
-    },
+    }
 
 
 
@@ -267,7 +266,7 @@ export const authService = {
         const iatJwt = refTokenPayload.iat
 
         //нашли Session по userId + deviceId
-        const session = await usersRepository.findBySession(userId,deviceId)
+        const session = await this.usersRepository.findBySession(userId,deviceId)
         if(!session) return false;
 
         //проверили, что iat JWT совпадает с iat Session
@@ -275,17 +274,17 @@ export const authService = {
         if(iatJwt !== iatSession) return false;
 
         //удаляем сессию
-        await usersRepository.deleteSession(userId,deviceId);
+        await this.usersRepository.deleteSession(userId,deviceId);
 
         return true;
-    },
+    }
 
 
     //SECURITYDEVICES
     //получаем все сессии
     async securityDevices(userId: string ): Promise <securityDevicesOutput[]> {
         //получаем все сессии конкретного пользователя
-        const activeSessions = await usersRepository.allSessions(userId); 
+        const activeSessions = await this.usersRepository.allSessions(userId); 
 
         //преобразуем Session в DeviceOutput
         return activeSessions.map((session) => ({
@@ -295,18 +294,18 @@ export const authService = {
             deviceId: session.device_id
         }))
 
-    }, 
+    }
 
     //удалить все сессии кроме текущей
     async deleteSecurityDevicesExpectOne(userId: string, deviceId: string): Promise <void> {
-       await usersRepository.deleteSecDevExpectCurrent(userId,deviceId)
-    },
+       await this.usersRepository.deleteSecDevExpectCurrent(userId,deviceId)
+    }
 
     //удалить только текущую сессию
     async deleteOneSession(userId: string, deviceId: string): Promise <void> {
 
         // Ищем Session по  deviceId
-        const oneSession = await usersRepository.findByDeviceId(deviceId)
+        const oneSession = await this.usersRepository.findByDeviceId(deviceId)
         if(!oneSession) {
             throw new NotFoundException('Session not found')
         }
@@ -318,10 +317,9 @@ export const authService = {
         }
 
         //удаляем сессию которую пользователь указал через :deviceId
-        await usersRepository.deleteOneSession(deviceId)
+        await this.usersRepository.deleteOneSession(deviceId)
 
     }
 
-
-
 }
+

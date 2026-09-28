@@ -6,8 +6,11 @@ import { CommentOutput } from "../output/comment.output";
 import { mapToPaginatedOutputUniversal } from "../../core/mappers/map-to-paginated-output-universal";
 import { CommentListPaginatedOutput } from "../router/output/comments-list-paginated.output";
 import { NotFoundException } from "../../core/exceptions/not-found.exception";
+import { injectable } from "inversify";
 
-export const commentsQueryRepository = {
+@injectable()
+export class CommentsQueryRepository {
+
     async findMany(
         queryDto: CommentQueryInput,
         postId: string,
@@ -46,12 +49,12 @@ export const commentsQueryRepository = {
             items,
             totalCount
         };
-    },
+    }
 
     //Найти комментарий по ID
     async findById(id: string): Promise<WithId<Comment> | null> {
         return commentCollection.findOne({ _id: new ObjectId(id) });
-    },
+    }
 
     //Найти комментарий или выбросить ошибку 
     async findByIdOrFail(id: string): Promise<WithId<Comment>> {
@@ -62,6 +65,8 @@ export const commentsQueryRepository = {
         return res;
     }
 }
+
+
 
 // для 1 коментария 
 export function mapToCommentOutput(comment: WithId<Comment>): CommentOutput {

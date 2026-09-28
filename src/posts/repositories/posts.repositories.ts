@@ -3,20 +3,20 @@ import { ObjectId, WithId } from 'mongodb';
 import { postCollection } from '../../db/collections';
 import { NotFoundException } from '../../core/exceptions/not-found.exception';
 import { PostAttributes } from '../application/dtos/post-attributes';
+import { injectable } from 'inversify';
 
-export const postsRepository = {
-   
-
+@injectable()
+export class PostsRepository {
     //Найти пост по ID
     async findById(id: string): Promise<WithId<Post> | null> { // findById ищет запись по Id
         return postCollection.findOne({ _id: new ObjectId(id) }) // findOne() — поиск одного документа. --- ({_id: new ObjectId(id) }) правильный синтаксис для поиска id в Mongodb
-    },
+    }
 
     //Создать новый пост
     async create(newPost: Post): Promise<string> {
         const insertResult = await postCollection.insertOne(newPost); //insertOne() — добавление одного документа.
         return insertResult.insertedId.toString();
-    },
+    }
 
     //Обновить пост (все поля, включая blogId)
     async update(
@@ -41,7 +41,7 @@ export const postsRepository = {
         }
 
         return; //Успешное завершение (ничего не возвращаем
-    },
+    }
 
     //Удалить пост
     async delete(id: string): Promise<void> {
@@ -56,4 +56,6 @@ export const postsRepository = {
         return;
     }
 }
+
+
 

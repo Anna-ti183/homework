@@ -1,22 +1,17 @@
-import { RequestHandler, Router } from "express";
+import { Router } from "express";
 import { BLOGS_ROUTERS } from "../constant/blogs.paths";
-import { getBlogsHandler } from "./handlers/get-blogs.handler";
-import { getIdBlogHandler } from "./handlers/get-Id-blog.handler";
-import { createBlogHandler } from "./handlers/create-blog.handler";
-import { updateBlogHandler } from "./handlers/update-blog.handler";
-import { deleteBlogHandler } from "./handlers/delete-blog.handler";
 import { superAdminGuardMiddleware } from "../../auth.middleware/middleware/super-admin.guard.middleware";
 import { idValidation } from "../../core/middlewares.validation/params-id.validation.middleware";
 import { inputValidationResultMiddleware } from "../../core/middlewares.validation/input-validator-result.middleware";
 import { blogInputDtoValidation, blogPostInputDtoValidation } from "../validation/blog.input-dto.validation-middlewares";
-import { createPostByBlogHandler } from "./handlers/create-post-by-blog.handler";
-import { getPostsByBlogHandler } from "./handlers/get-posts-by-blog.handler";
 import { paginationAndSortingValidation } from "../../core/middlewares.validation/query-pagination-sorting.validation.middleware";
 import { BlogSortField } from "./input/blog-sort-field";
 import { sanitizeQueryParams } from "../../core/middlewares.validation/sanitize-query.middleware";
 import { PostSortField } from "../../posts/routers/input/post-sort.field";
+import { container } from "../../composition-root";
+import { BlogsController } from "./handlers/handlers";
 
-
+const blogsController = container.get(BlogsController)
 
 export const blogsRouter = Router({});
 
@@ -30,14 +25,14 @@ blogsRouter
         paginationAndSortingValidation(BlogSortField),
         inputValidationResultMiddleware,
         sanitizeQueryParams,
-        getBlogsHandler as unknown as RequestHandler,
+        blogsController.getBlogs.bind(blogsController) //as unknown as RequestHandler,
     )
 
     .get(
         BLOGS_ROUTERS.BY_ID,
         idValidation,
         inputValidationResultMiddleware, // проверяет, прошли ли данные валидацию
-        getIdBlogHandler,
+        blogsController.getIdBlog.bind(blogsController),
     )
 
     .get(
@@ -46,7 +41,7 @@ blogsRouter
         paginationAndSortingValidation(PostSortField), // 2. Валидация query
         inputValidationResultMiddleware, // 3. Проверка ВСЕХ ошибок
         sanitizeQueryParams,     // 4. Применение преобразований
-        getPostsByBlogHandler as unknown as RequestHandler // 5. Хэндлер
+        blogsController.getPostByBlog.bind(blogsController) //as unknown as RequestHandler // 5. Хэндлер
     )
 
     .post(
@@ -54,7 +49,7 @@ blogsRouter
         superAdminGuardMiddleware, //АВТОРИЗАЦИЯ
         blogInputDtoValidation, // middleware-валидатор тела запроса на создание
         inputValidationResultMiddleware, // проверяет, прошли ли данные валидацию
-        createBlogHandler,
+        blogsController.createBlog.bind(blogsController),
     )
 
     .post(
@@ -63,7 +58,7 @@ blogsRouter
         idValidation,
         blogPostInputDtoValidation,
         inputValidationResultMiddleware,
-        createPostByBlogHandler,
+        blogsController.createPostByBlog.bind(blogsController),
     )
 
     .put(
@@ -72,7 +67,7 @@ blogsRouter
         idValidation,
         blogInputDtoValidation,
         inputValidationResultMiddleware,
-        updateBlogHandler,
+        blogsController.updateBlog.bind(blogsController),
     )
 
     .delete(
@@ -80,5 +75,5 @@ blogsRouter
         superAdminGuardMiddleware,
         idValidation,
         inputValidationResultMiddleware,
-        deleteBlogHandler,
+        blogsController.deleteBlog.bind(blogsController),
     );

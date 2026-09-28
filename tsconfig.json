@@ -6,15 +6,26 @@
     "outDir": "./dist",
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
-    "types": ["node", "jest"],
-  
+    "types": [
+      "node",
+      "jest"
+    ],
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true
   },
-
-  "files": ["index.d.ts"], //path (e.g.: "src/types/index.d.ts")
-    
-  "include": ["src/**/*", "index.d.ts"],
-  "exclude": ["_tests_", "dist", "node_modules"]
+  "files": [
+    "index.d.ts"
+  ], //path (e.g.: "src/types/index.d.ts")
+  "include": [
+    "src/**/*",
+    "index.d.ts"
+  ],
+  "exclude": [
+    "_tests_",
+    "dist",
+    "node_modules"
+  ]
 }

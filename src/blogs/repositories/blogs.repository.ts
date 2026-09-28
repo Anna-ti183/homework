@@ -1,40 +1,25 @@
-// Репозиторий отвечает ТОЛЬКО за работу с БД. 
-// Он выполняет CRUD-операции и ничего не знает про HTTP, бизнес-логику или хэндлеры.
-
 import { Blog } from "../domain/blogs";
 import { ObjectId, WithId } from "mongodb";
 import { blogCollection } from "../../db/collections";
-import { BlogQueryInput } from "../routers/input/blog-query.input";
 import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { BlogAttributes } from "../application/dtos/blog-attributes";
+import { injectable } from "inversify";
 
-
-export const blogsRepository = {
-
-//Найти блог по ID
+@injectable()
+export class BlogsRepository{
+    //Найти блог по ID
     async findById(id: string): Promise<WithId<Blog> | null> { // findById ищет запись по Id
         return blogCollection.findOne({ _id: new ObjectId(id) });  // findOne() — поиск одного документа. --- ({_id: new ObjectId(id) }) правильный синтаксис для поиска id в Mongodb
-    },
-   /* 
-//Найти блог или выбросить ошибку    
-    async findByIdOrFail(id: string): Promise<WithId<Blog>> { //Вызывает findById
-        const res = await blogCollection.findOne({ _id: new ObjectId(id) });
+    }
 
-        if (!res) {
-            throw new NotFoundException('Blog not exist');
-        }
-        return res;
-    },
-*/
-//Сохранить новый блог в БД
-
+    //Сохранить новый блог в БД
     async create(newBlog: Blog): Promise<string> { //newBlog: Blog — принимает объект блога (с уже добавленными createdAt и isMembership), 
         const insertResult = await blogCollection.insertOne(newBlog); //blogCollection.insertOne(newBlog)	Вставляет новый документ в коллекцию MongoDB
 
         return insertResult.insertedId.toString();  //insertResult.insertedId	Содержит сгенерированный MongoDB ObjectId
-    },
+    }
 
-//Обновить существующий блог
+    //Обновить существующий блог
     async update(
         id: string,   //принимает id
         dto: BlogAttributes  //принимает данные для обновления (тип)
@@ -57,7 +42,7 @@ export const blogsRepository = {
         }
 
         return; //Успешное завершение (ничего не возвращаем
-    },
+    }
 
 // Удалить блог
      async delete(id: string): Promise<void> {
@@ -70,8 +55,10 @@ export const blogsRepository = {
         }
 
          return;
-     },
+     }
+}
 
-};
+
+
 
 

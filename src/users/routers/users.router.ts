@@ -1,15 +1,17 @@
-import { RequestHandler, Router } from "express";
+import { Router } from "express";
 import { USERS_ROUTERS } from "../constant/users.paths";
 import { paginationAndSortingValidation } from "../../core/middlewares.validation/query-pagination-sorting.validation.middleware";
 import { UserSortField } from "./input/user-sort-field";
 import { inputValidationResultMiddleware } from "../../core/middlewares.validation/input-validator-result.middleware";
 import { sanitizeQueryParams } from "../../core/middlewares.validation/sanitize-query.middleware";
-import { getUserHandler } from "./handlers/get-users.handler";
 import { superAdminGuardMiddleware } from "../../auth.middleware/middleware/super-admin.guard.middleware";
 import { userInputDtoValidation } from "../validation/user.input-dto.validation-middlewares";
-import { createUserHandler } from "./handlers/create-user.handler";
 import { idValidation } from "../../core/middlewares.validation/params-id.validation.middleware";
-import { deleteUserHandler } from "./handlers/delete-user.handler";
+import { container } from "../../composition-root";
+import { UsersController } from "./handlers/handler";
+
+
+const usersController = container.get(UsersController)
 
 export const usersRouter = Router({});
 
@@ -20,7 +22,7 @@ usersRouter
         paginationAndSortingValidation(UserSortField),
         inputValidationResultMiddleware,
         sanitizeQueryParams,
-        getUserHandler as unknown as RequestHandler,
+        usersController.getUsers.bind(usersController),
     )
 
     .post(
@@ -28,7 +30,7 @@ usersRouter
         superAdminGuardMiddleware,
         userInputDtoValidation,
         inputValidationResultMiddleware,
-        createUserHandler,
+        usersController.createUser.bind(usersController),
     )
 
     .delete(
@@ -36,5 +38,5 @@ usersRouter
         superAdminGuardMiddleware,
         idValidation,
         inputValidationResultMiddleware,
-        deleteUserHandler,
+        usersController.deleteUser.bind(usersController),
     );

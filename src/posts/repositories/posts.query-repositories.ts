@@ -6,10 +6,11 @@ import { PostOutput } from '../routers/output/post.output';
 import { mapToPaginatedOutputUniversal } from '../../core/mappers/map-to-paginated-output-universal';
 import { PostListPaginatedOutput } from '../routers/output/post-list-paginated.output';
 import { NotFoundException } from '../../core/exceptions/not-found.exception';
+import { injectable } from 'inversify';
 
-
-export const postsQueryRepository = {
-    //Список постов с пагинацией и сортировкой
+@injectable()
+export class PostsQueryRepository {
+     //Список постов с пагинацией и сортировкой
     async findMany(
         queryDto: PostQueryInput,
     ): Promise<{ items: WithId<Post>[]; totalCount: number }> {
@@ -49,7 +50,7 @@ export const postsQueryRepository = {
             items,  // массив блогов на текущей странице
             totalCount  // общее количество блогов (всего в базе)
         };
-    },
+    }
 
     //Для эндпоинта GET /api/blogs/{blogId}/posts - Список постов конкретного блога с пагинацией
     async findByBlogId(
@@ -95,12 +96,12 @@ export const postsQueryRepository = {
             items,  // массив блогов на текущей странице
             totalCount  // общее количество блогов (всего в базе)
         };
-    },
+    }
     
     //Найти пост по ID
     async findById(id: string): Promise<WithId<Post> | null> { // findById ищет запись по Id
         return postCollection.findOne({ _id: new ObjectId(id) }) // findOne() — поиск одного документа. --- ({_id: new ObjectId(id) }) правильный синтаксис для поиска id в Mongodb
-    },
+    }
 
     //Найти блог или выбросить ошибку    
     async findByIdOrFail(id: string): Promise<WithId<Post>> { //Вызывает findById
@@ -110,8 +111,10 @@ export const postsQueryRepository = {
             throw new NotFoundException('Blog not exist');
         }
         return res;
-    },
+    }
 }
+
+
 
 
 // Используется для POST /posts (плоский ответ)

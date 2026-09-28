@@ -1,18 +1,21 @@
 import { IUserDB } from "../domain/users";
-import { usersRepository } from "../repositories/users.repository";
+import { UsersRepository } from "../repositories/users.repository";
 import { UserAttributes } from "./dtos/user-attributes";
 import argon2 from "argon2";
 import { BadRequestException } from "../../core/exceptions/bad-request.exception";
 import { argon2Service } from "../../auth/adapters/argon2.service";
 import { randomUUID } from "crypto";
+import { inject, injectable } from "inversify";
 
-export const usersService = {
+@injectable()
+export class UsersService { 
+    constructor(@inject(UsersRepository) protected usersRepository: UsersRepository){}
 
     //Создать нового юзера
     async create(dto: UserAttributes): Promise<string> {
 
         // ✅ Проверяем уникальность логина и email одним запросом
-        const uniqueUser = await usersRepository.findByLoginOrEmail(
+        const uniqueUser = await this.usersRepository.findByLoginOrEmail(
             dto.login,
             dto.email
         );
@@ -55,19 +58,16 @@ export const usersService = {
             }
         };
 
-        return usersRepository.create(newUser);
+        return this.usersRepository.create(newUser);
 
-    },
+    }
 
     //✅ Удалить пользователя 
     async delete(id: string): Promise<void> {
-        await usersRepository.delete(id)
-    },
+        await this.usersRepository.delete(id)
+    }
+}
 
-   
-
-
-};
 
 
 

@@ -6,11 +6,12 @@ import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { mapToPaginatedOutputUniversal } from "../../core/mappers/map-to-paginated-output-universal";
 import { BlogOutput } from "../output/blog.output";
 import { BlogListPaginatedOutput } from "../output/blog-list-paginated.output";
+import { injectable } from "inversify";
 
+@injectable()
+export class BlogsQueryRepository {
 
-export const blogsQueryRepository = {
-
-    //Получить список блогов с фильтрацией, пагинацией и сортировкой
+     //Получить список блогов с фильтрацией, пагинацией и сортировкой
     async findMany(
         queryDto: BlogQueryInput,
     ): Promise<{ items: WithId<Blog>[]; totalCount: number }> {
@@ -58,12 +59,12 @@ export const blogsQueryRepository = {
             items,  // массив блогов на текущей странице
             totalCount  // общее количество блогов (всего в базе)
         };
-    },
+    }
 
 //Найти блог по ID
     async findById(id: string): Promise<WithId<Blog> | null> { // findById ищет запись по Id
         return blogCollection.findOne({ _id: new ObjectId(id) });  // findOne() — поиск одного документа. --- ({_id: new ObjectId(id) }) правильный синтаксис для поиска id в Mongodb
-    },
+    }
     
 //Найти блог или выбросить ошибку    
     async findByIdOrFail(id: string): Promise<WithId<Blog>> { //Вызывает findById
@@ -73,8 +74,7 @@ export const blogsQueryRepository = {
             throw new NotFoundException('Blog not exist');
         }
         return res;
-    },
-    
+    }
 }
 
 //✅ Для ВСЕХ ЭНДПОИНТОВ из БД в формат ответа клиенту.(view-model для ответа API)

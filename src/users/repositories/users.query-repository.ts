@@ -6,9 +6,10 @@ import { NotFoundException } from "../../core/exceptions/not-found.exception";
 import { UserOutput } from "../routers/output/user.output";
 import { UserListPaginatedOutput } from "../routers/output/user-list.paginated.output";
 import { mapToPaginatedOutputUniversal } from "../../core/mappers/map-to-paginated-output-universal";
+import { injectable } from "inversify";
 
-export const usersQueryRepository = {
-
+@injectable()
+export class UsersQueryRepository {
     //Получить список пользователей  с фильтрацией, пагинацией и сортировкой
     async findMany(
         queryDto: UserQueryInput,
@@ -74,12 +75,12 @@ export const usersQueryRepository = {
             items,  // массив юзеров на текущей странице
             totalCount  // общее количество юзеров (всего в базе)
         };
-    },
+    }
 
     //Найти пользователя  по ID
     async findById(id: string): Promise<WithId<IUserDB> | null> {
         return userCollection.findOne({ _id: new ObjectId(id) }); // правильный синтаксис для поиска id в Mongodb
-    },
+    }
 
     //Найти пользователя  или выбросить ошибку
     async findByOrFail(id: string): Promise<WithId<IUserDB>> {
@@ -94,9 +95,10 @@ export const usersQueryRepository = {
             throw new NotFoundException('User not found')
         }
         return res;
-    },
+    }
 
 }
+
 
 //✅ Для ВСЕХ ЭНДПОИНТОВ из БД в формат ответа клиенту.(view-model для ответа API)
 export function mapToUserOutput(user: WithId<IUserDB>): UserOutput {
