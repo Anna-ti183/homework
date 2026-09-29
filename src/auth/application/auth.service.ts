@@ -1,5 +1,5 @@
 import { UsersRepository } from "../../users/repositories/users.repository";
-import { AuthAttributes, RegistrConfirmDTO, RegistrDTO, RegistrEmailResending } from "./dtos/auth.attributes";
+import { AuthAttributes, NewPasswordDTO, PasswordRecoveryDTO, RegistrConfirmDTO, RegistrDTO, RegistrEmailResending } from "./dtos/auth.attributes";
 import { argon2Service } from "../adapters/argon2.service";
 import { jwtService } from "../adapters/jwt.service";
 import { nodemailerService } from "../adapters/nodemailer.service";
@@ -17,9 +17,9 @@ import { inject, injectable } from "inversify";
 
 @injectable()
 export class AuthService {
-    constructor(@inject(UsersRepository) protected usersRepository: UsersRepository){}
+    constructor(@inject(UsersRepository) protected usersRepository: UsersRepository) { }
 
-     // 1. Ищем пользователя по логину ИЛИ email
+    // 1. Ищем пользователя по логину ИЛИ email
     async loginUser(dto: AuthAttributes, ip: string, deviceName: string): Promise<{ accessToken: string, refreshToken: string } | null> {
 
         const user = await this.usersRepository.findByLoginOrEmail(
@@ -266,15 +266,15 @@ export class AuthService {
         const iatJwt = refTokenPayload.iat
 
         //нашли Session по userId + deviceId
-        const session = await this.usersRepository.findBySession(userId,deviceId)
-        if(!session) return false;
+        const session = await this.usersRepository.findBySession(userId, deviceId)
+        if (!session) return false;
 
         //проверили, что iat JWT совпадает с iat Session
         const iatSession = session.iat;
-        if(iatJwt !== iatSession) return false;
+        if (iatJwt !== iatSession) return false;
 
         //удаляем сессию
-        await this.usersRepository.deleteSession(userId,deviceId);
+        await this.usersRepository.deleteSession(userId, deviceId);
 
         return true;
     }
@@ -282,9 +282,9 @@ export class AuthService {
 
     //SECURITYDEVICES
     //получаем все сессии
-    async securityDevices(userId: string ): Promise <securityDevicesOutput[]> {
+    async securityDevices(userId: string): Promise<securityDevicesOutput[]> {
         //получаем все сессии конкретного пользователя
-        const activeSessions = await this.usersRepository.allSessions(userId); 
+        const activeSessions = await this.usersRepository.allSessions(userId);
 
         //преобразуем Session в DeviceOutput
         return activeSessions.map((session) => ({
@@ -297,23 +297,23 @@ export class AuthService {
     }
 
     //удалить все сессии кроме текущей
-    async deleteSecurityDevicesExpectOne(userId: string, deviceId: string): Promise <void> {
-       await this.usersRepository.deleteSecDevExpectCurrent(userId,deviceId)
+    async deleteSecurityDevicesExpectOne(userId: string, deviceId: string): Promise<void> {
+        await this.usersRepository.deleteSecDevExpectCurrent(userId, deviceId)
     }
 
     //удалить только текущую сессию
-    async deleteOneSession(userId: string, deviceId: string): Promise <void> {
+    async deleteOneSession(userId: string, deviceId: string): Promise<void> {
 
         // Ищем Session по  deviceId
         const oneSession = await this.usersRepository.findByDeviceId(deviceId)
-        if(!oneSession) {
+        if (!oneSession) {
             throw new NotFoundException('Session not found')
         }
 
         //сравниваем  user_id сессии с  user_id из JWT
         const userIdSession = oneSession.user_id;
-        if(userId !== userIdSession) {
-            throw new ForbiddenException ('Invalid user')
+        if (userId !== userIdSession) {
+            throw new ForbiddenException('Invalid user')
         }
 
         //удаляем сессию которую пользователь указал через :deviceId
@@ -321,5 +321,58 @@ export class AuthService {
 
     }
 
-}
+    //ВОССТАНОВЛЕНИЕ ПОРОЛЯ
+    async passwordRecovery(dto: PasswordRecoveryDTO): Promise<void> {
+        const user = await this.usersRepository.findByEmail(dto.email)
+        if (!user) return;
 
+        //Новый сгенерированный код и дата истечения его срока  действия 
+        const passwordRecoveryCode = randomUUID();
+        const expirationPasswordDate = new Date(Date.now() + 10 * 60 * 1000); //текущее время + 10 минут
+
+
+        //обновили в БД
+        await this.usersRepository.updatePasswordCode(
+            user._id.toString(),
+            passwordRecoveryCode,
+            expirationPasswordDate
+        )
+
+        //отправили письмо
+        try {
+            await nodemailerService.sendEmail( //отправить сообщение на почту юзера с кодом подтверждения
+                user.email, //кому отправляем
+                passwordRecoveryCode, //какой код вставляем в письмо
+                emailExamples.passwordRecovery //какое письмо отправляем
+            )
+        } catch (e: unknown) {
+            console.error('Send email error', e); //залогировать ошибку при отправке сообщения
+        }
+
+        return;
+    }
+
+    //НОВЫЙ ПАРОЛЬ
+    async createNewPassword(dto: NewPasswordDTO): Promise<boolean> {
+        const user = await this.usersRepository.findByRecoveryCode(dto.recoveryCode)
+        if (!user) return false;
+
+        //проверяем отсутствует ли объект
+        if (!user.passwordRecovery) return false;
+
+        //проверяем дату до которой действителен код
+        if (user.passwordRecovery.expirationPasswordDate < new Date()) return false;
+
+        //создать хэш пароля
+        const createHashNewPassword = await argon2Service.generateHash(dto.newPassword);
+
+        //сохраняем новый пароль
+        await this.usersRepository.updatePassword(user._id.toString(), createHashNewPassword)
+
+        //удаляем использованый код
+        await this.usersRepository.deletePasswordCode(user._id.toString())
+
+
+        return true;
+    }
+}

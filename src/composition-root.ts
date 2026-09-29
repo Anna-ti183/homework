@@ -19,6 +19,8 @@ import { UsersController } from "./users/routers/handlers/handler";
 import { AuthController } from "./auth/routers/handlers/handler";
 import { AuthService } from "./auth/application/auth.service";
 import { SecurityDevicesController } from "./securityDevices/routers/handler/handler";
+import { RateLimitMiddleware } from "./core/middlewares.validation/rate-limit.middleware";
+import { SecurDevicesRefTokenMiddleware } from "./securityDevices/middleware/securityDevices.middleware";
 
 export const container = new Container();
 container.bind(BlogsController).to(BlogsController)
@@ -45,6 +47,11 @@ container.bind(SecurityDevicesController).to(SecurityDevicesController)
 
 container.bind(AuthController).to(AuthController)
 container.bind(AuthService).to(AuthService)
+
+container.bind(RateLimitMiddleware).to(RateLimitMiddleware)
+container.bind(SecurDevicesRefTokenMiddleware).to(SecurDevicesRefTokenMiddleware)
+
+
 
 /*
 const objects: any[] = []

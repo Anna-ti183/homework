@@ -4,9 +4,13 @@
 import { NextFunction, Request, Response } from 'express';
 import { jwtService } from '../../auth/adapters/jwt.service';
 import { HttpStatus } from '../../core/types/http-statuses';
-import { usersRepository } from '../../composition-root';
+import { inject, injectable } from 'inversify';
+import { UsersRepository } from '../../users/repositories/users.repository';
 
-export async function securDevicesRefTokenMiddleware (
+@injectable()
+export class SecurDevicesRefTokenMiddleware{
+    constructor(@inject(UsersRepository) protected usersRepository: UsersRepository){}
+    async securDevicesRefTokenMiddleware (
     req: Request,
     res: Response,
     next: NextFunction
@@ -25,7 +29,7 @@ export async function securDevicesRefTokenMiddleware (
     const iat = payloadRefreshToken.iat;
 
     //Найти соответствующую Session по userId + deviceId.
-    const session = await usersRepository.findBySession(userId,deviceId)
+    const session = await this.usersRepository.findBySession(userId,deviceId)
     if(!session) return res.status(HttpStatus.Unauthorized).send();
 
     //Сравнить iat из JWT с iat из Session.
@@ -38,4 +42,5 @@ export async function securDevicesRefTokenMiddleware (
 
     next();
 
+}
 }

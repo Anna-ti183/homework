@@ -11,4 +11,10 @@ export type IUserDB = {
         expirationDate: Date,
         isConfirmed: boolean //подтверждение 
                 }
+    
+    passwordRecovery?: {
+    passwordRecoveryCode: string,
+    expirationPasswordDate: Date
+    }
+    
 }

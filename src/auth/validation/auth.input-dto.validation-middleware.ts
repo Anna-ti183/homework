@@ -67,3 +67,26 @@ export const authInputDtoRegistrConfirmValidator = [
 export const authInputDtoRegistrEmailResendingValidation = [
     emailRegistrationValidator,
 ]
+
+//password-recovery 
+export const authInputDtoPasswordRecoveryValidation = [
+    emailRegistrationValidator
+]
+
+// new - password 
+const newPasswordValidator = body('newPassword')
+.isString()
+.withMessage('password should be string')
+.trim()
+.isLength({min: 6, max: 20})
+.withMessage('The min length new password is 6 and the max is 20')
+
+const recoveryCode = body('recoveryCode')
+.isString()
+.withMessage('code should be string')
+.notEmpty()  // чтобы не прислали пустую строку
+
+export const authInputDtoNewPasswordValidation = [
+    newPasswordValidator,
+    recoveryCode
+]

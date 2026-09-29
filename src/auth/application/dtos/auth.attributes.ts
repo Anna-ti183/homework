@@ -21,3 +21,21 @@ export type RegistrConfirmDTO = {
 export type RegistrEmailResending = {
     email: string;
 }
+
+//DTO  для изменения пароля 
+export class PasswordRecoveryDTO {
+    email:string
+    constructor(email:string){
+       this.email = email
+    }  
+}
+
+//DTO для нового пороля
+export class NewPasswordDTO {
+    newPassword: string
+    recoveryCode: string 
+    constructor(newPassword: string, recoveryCode: string){
+        this.newPassword = newPassword
+        this.recoveryCode = recoveryCode
+    }
+}

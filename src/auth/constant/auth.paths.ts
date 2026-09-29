@@ -11,4 +11,6 @@ export const AUTH_ROUTERS = {
     REGISTRATION_EMAIL_RESENDING: '/registration-email-resending',
     REFRESH_TOKEN: '/refresh-token',
     LOGOUT: '/logout',
+    PASSWORD_RECOVERY: '/password-recovery',
+    NEW_PASSWORD: '/new-password'
 } as const; 

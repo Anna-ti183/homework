@@ -77,8 +77,6 @@ export class UsersRepository {
     //обновляем код подтверждения
     async updateCode(id: string, confirmationCode: string, expirationDate: Date): Promise<void> {
 
-        console.log('UPDATE CODE', id, confirmationCode, expirationDate);
-
         await userCollection.updateOne(
             { _id: new ObjectId(id) }, //находит пользователя по id
             {
@@ -174,6 +172,54 @@ export class UsersRepository {
     async deleteOneSession(deviceId: string): Promise <void> {
         await deviceSessionCollection.deleteOne({device_id: deviceId})
     }
+
+
+
+    //PASSWORD 
+    //обновить код для изменения пароля 
+    async updatePasswordCode(id: string, passwordRecoveryCode: string, expirationPasswordDate: Date)
+    : Promise <void> {
+        await userCollection.updateOne(
+            { _id: new ObjectId(id) }, 
+            {
+                $set:
+                {'passwordRecovery.passwordRecoveryCode': passwordRecoveryCode, 
+                 'passwordRecovery.expirationPasswordDate': expirationPasswordDate, 
+                }
+            })
+    
+    }
+
+    //поиск польз-ля по коду восстановления
+    async findByRecoveryCode(recoveryCode: string): Promise<WithId<IUserDB> | null> {
+        const user = await userCollection.findOne ({"passwordRecovery.passwordRecoveryCode": recoveryCode})
+        return user;
+    }
+
+    //обновить пароль 
+    async updatePassword(id: string, newPassword:string): Promise<void> {
+          await userCollection.updateOne(
+            { _id: new ObjectId(id) },
+            {
+                $set:  // $set - используется для обновления значения существующего поля или создания нового поля, если его еще нет
+                    { "password" :  newPassword} 
+            })
+    }
+
+    //удаление использованного кода для изменения пароля
+    async deletePasswordCode(id:string ):Promise<void> {
+        await userCollection.updateOne(
+             { _id: new ObjectId(id) },
+             {
+                $unset: {passwordRecovery: ""}
+             }
+        )
+    }
+
 }
+
+
+
+
 
 
